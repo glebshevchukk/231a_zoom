@@ -69,9 +69,8 @@ def run_dolly(config):
         elif config.algo_type == "homography":
             src_points = np.int32([kp1[m.queryIdx].pt for m in matches])
             dst_points = np.int32([kp2[m.trainIdx].pt for m in matches])
-            H,_ = cv2.findHomography(dst_points,src_points)
-            H_inv = np.linalg.inv(H)
-            final_img = cv2.warpPerspective(li[i+1],H_inv,(config.width,config.height))
+            H,_ = cv2.findHomography(dst_points,src_points,cv2.RANSAC)
+            final_img = cv2.warpPerspective(li[i+1], H, (config.width, config.height)) 
         else:
             print(f"Method {config.algo_type} has not been implemented yet.")
             exit(0)
@@ -100,7 +99,7 @@ if __name__ == "__main__":
     parser.add_argument('--width',type=int,default=756)
     parser.add_argument('--mapping_type',type=str,default="full_affine")
     parser.add_argument('--algo_type',type=str,default="affine")
-    parser.add_argument('--threshold',type=int,default=220)
+    parser.add_argument('--threshold',type=int,default=180)
     parser.add_argument('--n_best_matches',type=int,default=30)
     parser.add_argument('--has_depth',type=bool,default=False)
     parser.add_argument('--debug',type=bool,default=False)
