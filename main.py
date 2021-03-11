@@ -9,8 +9,8 @@ from util import *
 from spline import *
 import scipy.ndimage as nd
 
-from imreg import model, register
-from imreg.samplers import sampler
+# from imreg import model, register
+# from imreg.samplers import sampler
 from manual_segmentation import *
 
 IPHONE_K = np.array([[26, 0, 0], [0, 26, 0], [0, 0, 1]])
@@ -19,11 +19,11 @@ IPHONE_K = np.array([[26, 0, 0], [0, 26, 0], [0, 0, 1]])
 def run_dolly(config):
     save_path = config.image_dir + config.algo_type + "_" + config.save_name
     save_orig_path = config.image_dir + config.save_orig_name
-    #PREPROCESSING
+    # PREPROCESSING
 
     li, lid, segd_fg, segd_bg = [], [], [], []
-    images, depth_images = load_images(
-        config.image_dir, config.num_images, config.has_depth, config.extension)
+    images, depth_images, pre_segmented_images = load_images(
+        config.image_dir, config.num_images, config.has_depth, config.pre_segmented, config.extension)
     # load everything in and threshold what's needed
     for image in images:
         l = cv2.imread(image)
@@ -43,11 +43,20 @@ def run_dolly(config):
     if config.manual_segmentation:
         for i, image in enumerate(images):
             foreGround, backGround, depthMap = img_seg(
-                image).run_segmentation()
+                image, i, config.image_dir).run_segmentation()
             lid.append(depthMap)
             segd_fg.append(foreGround)
             segd_bg.append(backGround)
-    # get orb features and match them
+    if config.pre_segmented:
+        for i, image in enumerate(pre_segmented_images):
+             d = cv2.resize(image, (config.width, config.height))
+            lid.append(d)
+            seg = li[i]*d
+            seg_b = li[i]*(np.logical_not(d))
+            segd_fg.append(seg)
+            segd_bg.append(seg_b)
+
+            # get orb features and match them
     final_images = [li[0]]
     if config.has_depth or config.manual_segmentation:
         use_for_features = segd_fg
@@ -91,22 +100,23 @@ def run_dolly(config):
         elif config.algo_type == "homography":
             src_points = np.int32([kp1[m.queryIdx].pt for m in matches])
             dst_points = np.int32([kp2[m.trainIdx].pt for m in matches])
-            H,_ = cv2.findHomography(dst_points,src_points,cv2.RANSAC)
-            final_img = cv2.warpPerspective(li[i+1], H, (config.width, config.height)) 
+            H, _ = cv2.findHomography(dst_points, src_points, cv2.RANSAC)
+            final_img = cv2.warpPerspective(
+                li[i+1], H, (config.width, config.height))
 
         elif config.algo_type == "spline":
             src_points = np.float32([kp1[m.queryIdx].pt for m in matches])
             dst_points = np.float32([kp2[m.trainIdx].pt for m in matches])
-            i1 = RegisterData(li[0],features=src_points)
-            i2 = RegisterData(li[i+1],features=dst_points)
+            i1 = RegisterData(li[0], features=src_points)
+            i2 = RegisterData(li[i+1], features=dst_points)
 
             feature = register.FeatureRegister(
                 model=model.ThinPlateSpline,
                 sampler=sampler.Spline,
-                )
+            )
 
             # Perform the registration.
-            p, warp, final_img, error = feature.register(i1,i2)
+            p, warp, final_img, error = feature.register(i1, i2)
             if config.debug:
                 plt.imshow(final_img)
                 plt.show()
@@ -123,10 +133,12 @@ def run_dolly(config):
         print("Interpolating final video using optical flow interpolation.")
         iplated = flow_interpolate(final_images)
 
-    #perform final saving
+    # perform final saving
     orig = [Image.fromarray(l) for l in li]
-    orig[0].save(save_orig_path,save_all=True, append_images=orig[1:], optimize=True, duration=100, loop=0)
-    iplated[0].save(save_path,save_all=True, append_images=iplated[1:], optimize=True, duration=100, loop=0)
+    orig[0].save(save_orig_path, save_all=True,
+                 append_images=orig[1:], optimize=True, duration=100, loop=0)
+    iplated[0].save(save_path, save_all=True, append_images=iplated[1:],
+                    optimize=True, duration=100, loop=0)
 
 
 if __name__ == "__main__":
@@ -145,5 +157,7 @@ if __name__ == "__main__":
     parser.add_argument('--has_depth', type=bool, default=False)
     parser.add_argument('--debug', type=bool, default=False)
     parser.add_argument('--manual_segmentation', type=bool, default=True)
+    parser.add_argument('--save_orig_name', type=str, default="original.gif")
+    parser.add_argument('--pre_segmented', type=bool, default=False)
     config = parser.parse_args()
     run_dolly(config)

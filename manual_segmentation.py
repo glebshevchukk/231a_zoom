@@ -20,8 +20,9 @@ Keys
 
 
 class img_seg:
-    def __init__(self, fn):
+    def __init__(self, fn, img_num, save_path):
         self.img = cv.imread(fn)
+        self.num = img_num
         resize = 0.2
         self.img = cv.resize(self.img, None, fx=resize,
                              fy=resize, interpolation=cv.INTER_AREA)
@@ -37,6 +38,7 @@ class img_seg:
         self.auto_update = True
         self.sketch = Sketcher(
             'img', [self.markers_vis, self.markers], self.get_colors)
+        self.save_path = save_path
 
     def get_colors(self):
         return list(map(int, self.colors[self.cur_marker])), self.cur_marker
@@ -93,6 +95,8 @@ class img_seg:
                 segmented_image_alpha_bg[:, :, 3] = self.segmented_image_mask.astype(
                     np.uint8)
 
+                cv.imwrite(self.save_path + str(self.num) + "_segmented_depth.jpg",
+                           self.conditionalArray*255)
                 return segmented_image_alpha_fg, segmented_image_alpha_bg, self.conditionalArray
         cv.destroyAllWindows()
-        return 0, 0, 0
+        return None, None, None
