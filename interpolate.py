@@ -4,7 +4,8 @@ import numpy as np
 import argparse
 from PIL import Image, ImageDraw
 
-def linear_interpolate(images,interpolate_rate=5):
+
+def linear_interpolate(images, interpolate_rate=5):
     '''
     Create a video interpolating between the frames by taking a linear
     weight of each pair of neighbor frames
@@ -13,15 +14,16 @@ def linear_interpolate(images,interpolate_rate=5):
     iplated = []
     prev = images[0]
     for frame in images[1:]:
-        for i in range(1,interpolate_rate+1):
+        for i in range(1, interpolate_rate+1):
             weight = float(i) / interpolate_rate
-            mid_frame = cv2.addWeighted(prev,1-weight,frame,weight,0) 
+            mid_frame = cv2.addWeighted(prev, 1-weight, frame, weight, 0)
             iplated.append(Image.fromarray(mid_frame))
         prev = frame
     return iplated
 
-def flow_interpolate(images,interpolate_rate=5):
-    # Calculates dense optical flow by Farneback method 
+
+def flow_interpolate(images, interpolate_rate=5):
+    # Calculates dense optical flow by Farneback method
     prev = images[0]
     iplated = []
     for frame in images[1:]:
@@ -34,14 +36,14 @@ def flow_interpolate(images,interpolate_rate=5):
         h, w = flow.shape[:2]
 
         flow = -flow
-        flow[:,:,0] += np.arange(w)
-        flow[:,:,1] += np.arange(h)[:,np.newaxis]
-        mid_frame = cv2.remap(prev,flow,None,cv2.INTER_LINEAR)
+        flow[:, :, 0] += np.arange(w)
+        flow[:, :, 1] += np.arange(h)[:, np.newaxis]
+        mid_frame = cv2.remap(prev, flow, None, cv2.INTER_LINEAR)
 
-        for i in range(1,interpolate_rate+1):
-           weight = float(i) / interpolate_rate
-           new_frame = cv2.addWeighted(prev,1-weight,mid_frame,weight,0) 
-           iplated.append(Image.fromarray(new_frame))
+        for i in range(1, interpolate_rate+1):
+            weight = float(i) / interpolate_rate
+            new_frame = cv2.addWeighted(prev, 1-weight, mid_frame, weight, 0)
+            iplated.append(Image.fromarray(new_frame))
         prev = frame
  
     return iplated
