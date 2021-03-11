@@ -6,11 +6,17 @@ from PIL import Image, ImageDraw
 
 from interpolate import *
 from util import *
+from spline import *
+import scipy.ndimage as nd
+
+from imreg import model, register
+from imreg.samplers import sampler
 
 IPHONE_K = np.array([[26,0,0],[0,26,0],[0,0,1]])
 
 def run_dolly(config):
-    save_path = config.image_dir + config.save_name
+    save_path = config.image_dir + config.algo_type + "_" + config.save_name
+    save_orig_path = config.image_dir + config.save_orig_name
     #PREPROCESSING
 
     li, lid,segd_fg, segd_bg = [],[],[],[]
@@ -32,6 +38,7 @@ def run_dolly(config):
             segd_fg.append(seg)
             segd_bg.append(seg_b)
     #get orb features and match them
+    #final_images = []
     final_images = [li[0]]
     if config.has_depth:
         use_for_features = segd_fg
@@ -71,6 +78,23 @@ def run_dolly(config):
             dst_points = np.int32([kp2[m.trainIdx].pt for m in matches])
             H,_ = cv2.findHomography(dst_points,src_points,cv2.RANSAC)
             final_img = cv2.warpPerspective(li[i+1], H, (config.width, config.height)) 
+
+        elif config.algo_type == "spline":
+            src_points = np.float32([kp1[m.queryIdx].pt for m in matches])
+            dst_points = np.float32([kp2[m.trainIdx].pt for m in matches])
+            i1 = RegisterData(li[0],features=src_points)
+            i2 = RegisterData(li[i+1],features=dst_points)
+
+            feature = register.FeatureRegister(
+                model=model.ThinPlateSpline,
+                sampler=sampler.Spline,
+                )
+
+            # Perform the registration.
+            p, warp, final_img, error = feature.register(i1,i2)
+            if config.debug:
+                plt.imshow(final_img)
+                plt.show()
         else:
             print(f"Method {config.algo_type} has not been implemented yet.")
             exit(0)
@@ -85,7 +109,9 @@ def run_dolly(config):
         iplated = flow_interpolate(final_images)
 
     #perform final saving
-    iplated[0].save(save_path,save_all=True, append_images=iplated[1:], optimize=True, duration=500, loop=1)
+    orig = [Image.fromarray(l) for l in li]
+    orig[0].save(save_orig_path,save_all=True, append_images=orig[1:], optimize=True, duration=100, loop=0)
+    iplated[0].save(save_path,save_all=True, append_images=iplated[1:], optimize=True, duration=100, loop=0)
 
 
 if __name__ == "__main__":
@@ -93,6 +119,7 @@ if __name__ == "__main__":
     parser.add_argument('--interpolation_type',type=str,default='flow')
     parser.add_argument('--image_dir',type=str,default="img/maggie/")
     parser.add_argument('--save_name',type=str,default="dollied.gif")
+    parser.add_argument('--save_orig_name',type=str,default="original.gif")
     parser.add_argument('--extension',type=str,default=".jpg")
     parser.add_argument('--num_images',type=int,default=4)
     parser.add_argument('--height',type=int,default=1008)

@@ -29,6 +29,8 @@ def flow_interpolate(images,interpolate_rate=5):
         prev_gray = cv2.cvtColor(prev, cv2.COLOR_RGB2GRAY) 
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY) 
         flow = cv2.calcOpticalFlowFarneback(prev_gray,gray, None, 0.5, 3, 25, 3, 7, 1.2, cv2.OPTFLOW_FARNEBACK_GAUSSIAN) 
+
+        viz_flow(frame,flow)
         h, w = flow.shape[:2]
 
         flow = -flow
@@ -41,5 +43,17 @@ def flow_interpolate(images,interpolate_rate=5):
            new_frame = cv2.addWeighted(prev,1-weight,mid_frame,weight,0) 
            iplated.append(Image.fromarray(new_frame))
         prev = frame
-    print(len(iplated))
+ 
     return iplated
+
+def viz_flow(im1,flow):
+    hsv = np.zeros(im1.shape, dtype=np.uint8)
+    hsv[..., 1] = 255
+
+    mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+    hsv[..., 0] = ang * 180 / np.pi / 2
+    hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+    bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+    # plt.imshow(bgr)
+    # plt.show()
+    return bgr
