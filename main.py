@@ -49,7 +49,6 @@ def run_dolly(config):
             segd_bg.append(backGround)
     if config.pre_segmented:
         for i, image in enumerate(pre_segmented_images):
-            print(image)
             d = cv2.resize(cv.imread(image), (config.width, config.height))
             lid.append(d)
             seg = li[i]*d
