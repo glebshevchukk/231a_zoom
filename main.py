@@ -49,7 +49,8 @@ def run_dolly(config):
             segd_bg.append(backGround)
     if config.pre_segmented:
         for i, image in enumerate(pre_segmented_images):
-             d = cv2.resize(image, (config.width, config.height))
+            print(image)
+            d = cv2.resize(cv.imread(image), (config.width, config.height))
             lid.append(d)
             seg = li[i]*d
             seg_b = li[i]*(np.logical_not(d))
@@ -58,7 +59,7 @@ def run_dolly(config):
 
             # get orb features and match them
     final_images = [li[0]]
-    if config.has_depth or config.manual_segmentation:
+    if config.has_depth or config.manual_segmentation or config.pre_segmented:
         use_for_features = segd_fg
     else:
         use_for_features = li
@@ -87,7 +88,7 @@ def run_dolly(config):
                 [kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
             X, _ = cv2.estimateAffinePartial2D(dst_points, src_points)
 
-            if config.mapping_type == "separate_background" and (config.has_depth or config.manual_segmentation):
+            if config.mapping_type == "separate_background" and (config.has_depth or config.manual_segmentation or config.pre_segmented):
                 foreground = segd_fg[0]
                 background = segd_bg[i]
                 background = cv2.warpAffine(
@@ -156,7 +157,7 @@ if __name__ == "__main__":
     parser.add_argument('--n_best_matches', type=int, default=30)
     parser.add_argument('--has_depth', type=bool, default=False)
     parser.add_argument('--debug', type=bool, default=False)
-    parser.add_argument('--manual_segmentation', type=bool, default=True)
+    parser.add_argument('--manual_segmentation', type=bool, default=False)
     parser.add_argument('--save_orig_name', type=str, default="original.gif")
     parser.add_argument('--pre_segmented', type=bool, default=False)
     config = parser.parse_args()

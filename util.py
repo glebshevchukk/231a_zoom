@@ -10,7 +10,7 @@ def load_images(image_dir, num_images, has_depth, pre_segmented, extension=".jpg
             depth_images.append(image_dir+str(i)+"_depth"+extension)
         if pre_segmented:
             pre_segmented_imgaes.append(
-                image_dir+str(i)+"segmented_depth"+extension)
+                image_dir+str(i)+"_segmented_depth"+extension)
     return images, depth_images, pre_segmented_imgaes
 
 # adapted from https://medium.com/analytics-vidhya/using-homography-for-pose-estimation-in-opencv-a7215f260fdd
