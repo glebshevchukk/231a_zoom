@@ -1,3 +1,11 @@
+'''
+Main runner for performing computational dolly zoom.
+Resources used:
+1) https://github.com/pyimreg/python-register/tree/master/imreg
+2) https://www.geeksforgeeks.org/image-registration-using-opencv-python/
+3) https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_matcher/py_matcher.html
+'''
+
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
