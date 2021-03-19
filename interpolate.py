@@ -1,3 +1,9 @@
+'''
+Code adapted from:
+1) https://stackoverflow.com/questions/13685771/opencv-python-calcopticalflowfarneback
+2) https://theailearner.com/2018/11/15/image-interpolation-using-opencv-python/
+'''
+
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
