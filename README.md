@@ -1,12 +1,12 @@
 This is our 231A class project testing different approaches to computational dolly zoom.
 
 Example usage:
-'''
+```
 python main.py --extension .jpg --interpolation_type linear --num_images 5 --threshold 140 --mapping_type full_affine --algo_type affine --image_dir img/board/    
-'''
-'''
+```
+```
 python main.py --extension .jpg --interpolation_type flow  --num_images 5 --threshold 140 --mapping_type full_affine --algo_type spline --image_dir img/tree/    
-'''
+```
 Instructions for using Portrait mode depth:
 1. Capture photos using iPhone portrait mode
 2. Transfer photos to img/ folder
